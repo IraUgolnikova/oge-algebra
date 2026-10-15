@@ -1,0 +1,487 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Тихая Заводь</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:wght@400;600&family=Marck+Script&display=swap" rel="stylesheet">
+<style>
+/* Layout: одна колонка 520px, один вопрос на экран, крупная клавиатура внизу. Ключ с зубцами показывает прогресс. */
+:root{
+  --bg:#e8ecf0; --card:#f6f8fa; --ink:#17212c; --muted:#56626f;
+  --accent:#8f6209; --accent-ink:#ffffff; --good:#1f7a55; --bad:#a22c3a;
+  --line:#c5ced8; --teeth-off:#cfd7df; --soft:#dde4ea;
+  --f-body:'Literata',Georgia,'Times New Roman',serif;
+  --f-hand:'Marck Script','Segoe Script','Brush Script MT',cursive;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1722; --card:#17212f; --ink:#e8edf3; --muted:#9aa7b6;
+    --accent:#d9a441; --accent-ink:#1a1405; --good:#5fbf94; --bad:#ec7f8a;
+    --line:#2a3647; --teeth-off:#2c3949; --soft:#1e2a3a; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1722; --card:#17212f; --ink:#e8edf3; --muted:#9aa7b6;
+  --accent:#d9a441; --accent-ink:#1a1405; --good:#5fbf94; --bad:#ec7f8a;
+  --line:#2a3647; --teeth-off:#2c3949; --soft:#1e2a3a; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.55;padding-inline:16px;padding-block:14px 28px;-webkit-tap-highlight-color:transparent}
+#app{max-width:520px;margin-inline:auto;display:flex;flex-direction:column;gap:16px;min-width:0}
+h1,h2,h3{margin:0;font-weight:600;text-wrap:balance;line-height:1.2}
+p{margin:0}
+.hand{font-family:var(--f-hand);font-weight:400}
+.title{font-family:var(--f-hand);font-size:44px;line-height:1;color:var(--accent);font-weight:400}
+.lead{color:var(--muted);font-size:16px}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.btn{display:block;width:100%;padding:14px 16px;border:0;border-radius:10px;background:var(--accent);color:var(--accent-ink);font-weight:600;font-size:17px;text-align:center}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.link{background:none;border:0;padding:8px 0;color:var(--muted);font-size:15px;text-align:left}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.eyebrow{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.row{display:flex;gap:12px;align-items:center;justify-content:space-between;min-width:0}
+.row>div{min-width:0}
+.series{display:flex;flex-direction:column;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card)}
+.srow{display:flex;flex-direction:column;gap:6px;padding:14px 16px;border-top:1px solid var(--line)}
+.srow:first-child{border-top:0}
+.srow .nm{font-weight:600}
+.srow .sub{font-size:14px;color:var(--muted)}
+.chip{display:inline-block;font-size:13px;padding:2px 10px;border-radius:999px;border:1.5px solid var(--line);color:var(--muted);white-space:nowrap}
+.chip.good{color:var(--good);border-color:var(--good)}
+.chip.mid{color:var(--accent);border-color:var(--accent)}
+.chip.bad{color:var(--bad);border-color:var(--bad)}
+.locked{opacity:.62}
+.teeth{display:flex;align-items:flex-end;gap:6px;height:30px}
+.teeth i{display:block;width:14px;border-radius:2px 2px 0 0;background:var(--teeth-off);border:1.5px solid var(--line);border-bottom:0}
+.teeth i.on{background:var(--accent);border-color:var(--accent)}
+.bar{height:6px;background:var(--soft);border-radius:3px;overflow:hidden}
+.bar>b{display:block;height:100%;background:var(--accent)}
+.q{font-size:19px;line-height:1.45;padding-block:2px}
+.q sup{font-size:.62em;line-height:0}
+.sys{border-left:3px solid var(--accent);padding-left:12px;margin-block:6px}
+.fr{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin-inline:.15em;line-height:1.15;font-size:.92em}
+.fr>span:first-child{padding:0 .25em .08em;border-bottom:1.5px solid currentColor}
+.fr>span:last-child{padding:.08em .25em 0}
+.ans{min-height:48px;display:flex;align-items:center;padding:6px 14px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);font-size:24px;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.ans.empty{color:var(--muted);font-size:18px}
+.msg{color:var(--bad);font-size:15px;min-height:0;margin-top:-6px}
+.pad{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.k{height:clamp(42px,6.4vh,52px);padding:0;border:1.5px solid var(--line);border-radius:10px;background:var(--card);font-size:22px;font-variant-numeric:tabular-nums}
+.k:active{background:var(--soft)}
+.k.alt{color:var(--muted)}
+.k.go{grid-column:span 3;background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-size:17px;font-weight:600}
+.fb{border:1.5px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;background:var(--card)}
+.fb.ok{border-color:var(--good)}
+.fb.no{border-color:var(--bad)}
+.fb h3{font-size:18px}
+.fb.ok h3{color:var(--good)}
+.fb.no h3{color:var(--bad)}
+.why{font-size:16px}
+.why sup{font-size:.62em;line-height:0}
+.scene{font-size:18px;display:flex;flex-direction:column;gap:12px}
+.scene .hand{font-size:26px;color:var(--accent);line-height:1.2}
+.scene .quote{border-left:3px solid var(--accent);padding-left:12px;color:var(--ink)}
+.items{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-size:16px}
+details{border:1px solid var(--line);border-radius:10px;background:var(--card);padding:10px 14px}
+summary{cursor:pointer;font-size:15px;color:var(--muted)}
+details[open] summary{margin-bottom:8px}
+details p+p{margin-top:8px}
+.small{font-size:14px;color:var(--muted)}
+.res{display:flex;flex-direction:column;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card)}
+.res .srow{flex-direction:row;align-items:center;justify-content:space-between;gap:10px}
+.err q{quotes:none}
+.inp{width:100%;height:46px;padding:0 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font:inherit;font-size:17px}
+.rep{width:100%;font:inherit;font-size:14px;line-height:1.45;padding:10px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);resize:none}
+input:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.okmsg{color:var(--good);font-size:15px}
+@media (prefers-reduced-motion:no-preference){.btn,.k{transition:background .12s}}
+</style>
+
+<div id="app"></div>
+
+<script>
+/*GEN-START*/
+const rnd=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const pick=a=>a[rnd(0,a.length-1)];
+const nz=(a,b)=>{let v=0;while(v===0)v=rnd(a,b);return v;};
+const shuffle=a=>{const r=a.slice();for(let i=r.length-1;i>0;i--){const j=rnd(0,i);[r[i],r[j]]=[r[j],r[i]];}return r;};
+const num=n=>n<0?'−'+Math.abs(n):String(n);
+const par=n=>n<0?'(−'+Math.abs(n)+')':String(n);
+const dec=x=>String(parseFloat(Number(x).toFixed(8))).replace('.',',').replace('-','−');
+const sup=(b,e)=>`${b}<sup>${e}</sup>`;
+const frac=(n,d)=>`<span class="fr"><span>${n}</span><span>${d}</span></span>`;
+const grp=n=>String(n).replace(/\B(?=(\d{3})+(?!\d))/g,' ');
+const X2='x<sup>2</sup>';
+function poly(terms){let s='';terms.forEach(([c,v])=>{if(c===0)return;const ab=Math.abs(c);const cs=(ab===1&&v)?'':String(ab);const t=cs+v;if(!s){s=(c<0?'−':'')+t;}else{s+=(c<0?' − ':' + ')+t;}});return s||'0';}
+
+const BLOCKS=[
+{id:'b1',name:'Выражения и линейные уравнения',from:'7 класс',gens:[
+ ()=>{const x=nz(-9,9),a=pick([2,3,4,5,6,7,8,9,-2,-3,-4]),b=nz(-15,15),c=a*x+b;
+  return {q:`Реши уравнение: ${poly([[a,'x'],[b,'']])} = ${num(c)}`,a:x,
+   why:`Переносим ${num(b)} в правую часть с противоположным знаком: ${poly([[a,'x']])} = ${num(c)} − ${par(b)} = ${num(c-b)}. Делим обе части на ${num(a)}: x = ${num(x)}.`,v:t=>a*t+b===c};},
+ ()=>{const a=rnd(2,9),b=nz(-9,9);let x;do{x=nz(-9,9);}while(x+b===0);const c=a*(x+b),inner=poly([[1,'x'],[b,'']]);
+  return {q:`Реши уравнение: ${a}(${inner}) = ${num(c)}`,a:x,
+   why:`Делим обе части на ${a}: ${inner} = ${num(c/a)}. Значит, x = ${num(c/a)} − ${par(b)} = ${num(x)}.`,v:t=>a*(t+b)===c};},
+ ()=>{const p=nz(-5,5),r=nz(-5,5),a=nz(-6,6),b=nz(-6,6),ans=p*a+r*b;
+  return {q:`Найди значение выражения ${poly([[p,'a'],[r,'b']])} при a = ${num(a)}, b = ${num(b)}.`,a:ans,
+   why:`Подставляем числа: ${par(p)}·${par(a)} + ${par(r)}·${par(b)} = ${num(p*a)} + ${par(r*b)} = ${num(ans)}.`,v:t=>t===p*a+r*b};},
+ ()=>{const k=nz(-6,6),m=nz(-9,9),n=nz(-5,8),ans=k*n+m;
+  return {q:`Линейная функция задана формулой y = ${poly([[k,'x'],[m,'']])}. Найди значение y при x = ${num(n)}.`,a:ans,
+   why:`Подставляем x = ${num(n)}: y = ${par(k)}·${par(n)} + ${par(m)} = ${num(k*n)} + ${par(m)} = ${num(ans)}.`,v:t=>t===k*n+m};},
+ ()=>{const k=pick([2,3,4,5,-2,-3]),m=nz(-9,9),n=nz(-6,6),y=k*n+m;
+  return {q:`Линейная функция задана формулой y = ${poly([[k,'x'],[m,'']])}. Найди значение x, при котором y = ${num(y)}. Для этого реши уравнение ${num(y)} = ${poly([[k,'x'],[m,'']])}.`,a:n,
+   why:`Составляем уравнение ${poly([[k,'x'],[m,'']])} = ${num(y)}. Переносим ${num(m)}: ${poly([[k,'x']])} = ${num(y-m)}. Делим на ${num(k)}: x = ${num(n)}.`,v:t=>k*t+m===y};},
+ ()=>{const n=rnd(2,5),p=rnd(12,60),r=rnd(10,40),tot=n*p+r;
+  return {q:`Мира купила ${n} одинаковых тетради и ручку. Ручка стоит ${r} ₽, всего заплатили ${tot} ₽. Сколько рублей стоит одна тетрадь?`,a:p,
+   why:`На тетради ушло ${tot} − ${r} = ${n*p} ₽. Делим на ${n}: ${n*p} : ${n} = ${p} ₽.`,v:t=>n*t+r===tot};}
+]},
+{id:'b2',name:'Степени, многочлены, формулы сокращённого умножения',from:'7 класс',gens:[
+ ()=>{const b=pick([2,3,5]),e=rnd(1,4),m=rnd(2,6),n=rnd(2,6),k=m+n-e;
+  return {q:`Найди значение выражения ${sup(b,m)} · ${sup(b,n)} : ${sup(b,k)}`,a:b**e,
+   why:`При умножении степеней показатели складываются, при делении вычитаются: ${m} + ${n} − ${k} = ${e}. Значит, ${sup(b,e)} = ${b**e}.`,v:t=>t*b**k===b**(m+n)};},
+ ()=>{const b=pick([2,3]),m=rnd(2,3),n=rnd(2,3),e=rnd(1,4),k=m*n-e;
+  return {q:`Найди значение выражения (${sup(b,m)})<sup>${n}</sup> : ${sup(b,k)}`,a:b**e,
+   why:`При возведении степени в степень показатели перемножаются: ${m}·${n} = ${m*n}. Потом делим: ${m*n} − ${k} = ${e}. ${sup(b,e)} = ${b**e}.`,v:t=>t*b**k===b**(m*n)};},
+ ()=>{const a=rnd(52,98),b=100-a;
+  return {q:`Вычисли удобным способом: ${a}<sup>2</sup> − ${b}<sup>2</sup>`,a:(a-b)*100,
+   why:`Разность квадратов: a² − b² = (a − b)(a + b) = ${a-b}·${a+b} = ${(a-b)*100}.`,v:t=>t===a*a-b*b};},
+ ()=>{const k=rnd(2,9),x=rnd(13,99);
+  return {q:`Упрости выражение (x + ${k})<sup>2</sup> − x<sup>2</sup> − ${2*k}x. Затем найди его значение при x = ${x}.`,a:k*k,
+   why:`Квадрат суммы: (x + ${k})² = x² + ${2*k}x + ${k*k}. Всё, что с x, сокращается, остаётся ${k*k}. От x ответ не зависит.`,v:t=>t===(x+k)**2-x*x-2*k*x};},
+ ()=>{const a=rnd(2,5),b=nz(-6,6),c=nz(-6,6);
+  return {q:`Раскрой скобки в выражении (${poly([[a,'x'],[b,'']])})(${poly([[1,'x'],[c,'']])}). Чему равен коэффициент при x?`,a:a*c+b,
+   why:`Слагаемые с x получаются двумя способами: ${a}x·${par(c)} и ${par(b)}·x. Складываем коэффициенты: ${num(a*c)} + ${par(b)} = ${num(a*c+b)}.`,v:t=>t===a*c+b};}
+]},
+{id:'b3',name:'Системы линейных уравнений',from:'7 класс',gens:[
+ ()=>{const x=nz(-8,12),y=nz(-8,12),s=x+y,d=x-y,askX=Math.random()<.5;
+  return {q:`Реши систему уравнений и найди ${askX?'x':'y'}:<div class="sys"><div>x + y = ${num(s)}</div><div>x − y = ${num(d)}</div></div>`,a:askX?x:y,
+   why:`Складываем уравнения: 2x = ${num(s+d)}, значит x = ${num(x)}. Из первого уравнения y = ${num(s)} − ${par(x)} = ${num(y)}.`,v:t=>askX?(t+y===s&&t-y===d):(x+t===s&&x-t===d)};},
+ ()=>{let a1,a2,b,x,y;do{a1=nz(-4,5);a2=nz(-4,5);}while(a1+a2===0);b=nz(-4,4);x=nz(-5,6);y=nz(-5,6);
+  const c1=a1*x+b*y,c2=a2*x-b*y,askX=Math.random()<.5;
+  return {q:`Реши систему уравнений и найди ${askX?'x':'y'}:<div class="sys"><div>${poly([[a1,'x'],[b,'y']])} = ${num(c1)}</div><div>${poly([[a2,'x'],[-b,'y']])} = ${num(c2)}</div></div>`,a:askX?x:y,
+   why:`Коэффициенты при y противоположны (${num(b)} и ${num(-b)}), поэтому уравнения можно сложить: ${poly([[a1+a2,'x']])} = ${num(c1+c2)}, откуда x = ${num(x)}. Подставляем в первое уравнение и получаем y = ${num(y)}.`,
+   v:t=>askX?(a1*t+b*y===c1&&a2*t-b*y===c2):(a1*x+b*t===c1&&a2*x-b*t===c2)};},
+ ()=>{const big=rnd(8,40),small=rnd(1,big-1),s=big+small,d=big-small;
+  return {q:`Сумма двух чисел равна ${s}, а их разность равна ${d}. Найди большее число.`,a:big,
+   why:`Если сложить сумму и разность, получится удвоенное большее число: ${s} + ${d} = ${s+d}. Делим на 2: ${big}.`,v:t=>t+(s-t)===s&&t-(s-t)===d};},
+ ()=>{let k1,k2;do{k1=nz(-4,4);k2=nz(-4,4);}while(k1===k2);const m1=rnd(-8,8),x=nz(-6,6),m2=m1+(k1-k2)*x;
+  return {q:`Графики функций y = ${poly([[k1,'x'],[m1,'']])} и y = ${poly([[k2,'x'],[m2,'']])} пересекаются в одной точке. Найди абсциссу (то есть x) этой точки.`,a:x,
+   why:`В точке пересечения значения y равны: ${poly([[k1,'x'],[m1,'']])} = ${poly([[k2,'x'],[m2,'']])}. Собираем x слева: ${poly([[k1-k2,'x']])} = ${num(m2-m1)}, откуда x = ${num(x)}.`,v:t=>k1*t+m1===k2*t+m2};}
+]},
+{id:'b4',name:'Дроби и квадратные корни',from:'8 класс',gens:[
+ ()=>{const k=rnd(2,9);let n;do{n=rnd(10,30);}while(n===k);
+  return {q:`Найди значение выражения ${frac(X2+' − '+k*k,'x − '+k)} при x = ${n}.`,a:n+k,
+   why:`Числитель — разность квадратов: x² − ${k*k} = (x − ${k})(x + ${k}). Сокращаем на (x − ${k}) и получаем x + ${k} = ${n} + ${k} = ${n+k}.`,v:t=>t*(n-k)===n*n-k*k};},
+ ()=>{const ds=[2,4,5,8,10,20];let it,tot;
+  do{it=[0,1,2].map((_,i)=>{const d=pick(ds);return {n:rnd(1,d-1),d,s:i===0?1:pick([1,-1])};});tot=it.reduce((t,f)=>t+f.s*f.n*(40/f.d),0);}while(tot<=0||tot>200);
+  const expr=it.map((f,i)=>(i===0?'':(f.s>0?' + ':' − '))+frac(f.n,f.d)).join('');
+  const nums=it.map((f,i)=>(i===0?'':(f.s>0?' + ':' − '))+(f.n*40/f.d)).join('');
+  return {q:`Найди значение выражения ${expr}. Ответ запиши десятичной дробью.`,a:tot/40,
+   why:`Приводим дроби к общему знаменателю 40. В числителе: ${nums} = ${tot}. Значит, ${tot}/40 = ${dec(tot/40)}.`,v:t=>Math.abs(t*40-tot)<1e-6};},
+ ()=>{const m=pick([2,3,5,6,7,8,10,12,18,20,32,50]);let s,n;do{s=rnd(2,4);n=m*s*s;}while(n>300);
+  return {q:`Найди значение выражения √${m} · √${n}.`,a:m*s,
+   why:`Произведение корней равно корню из произведения: √${m}·√${n} = √${m*n} = ${m*s}.`,v:t=>t*t===m*n};},
+ ()=>{const a=pick([5,7,10,11,13,15,17,19,21]),b=rnd(2,4);
+  return {q:`Найди значение выражения (√${a} + ${b})(√${a} − ${b}).`,a:a-b*b,
+   why:`Это разность квадратов: (√${a})² − ${b}² = ${a} − ${b*b} = ${a-b*b}.`,v:t=>t===a-b*b};}
+]},
+{id:'b5',name:'Квадратные и дробные уравнения',from:'8 класс',gens:[
+ ()=>{let r1,r2;do{r1=rnd(-9,9);r2=rnd(-9,9);}while(r1>=r2);const p=-(r1+r2),q=r1*r2,big=Math.random()<.5;
+  return {q:`Реши уравнение ${poly([[1,X2],[p,'x'],[q,'']])} = 0. Если корней два, запиши ${big?'больший':'меньший'} из них.`,a:big?r2:r1,
+   why:`По теореме Виета сумма корней равна ${num(-p)}, а произведение равно ${num(q)}. Подходят числа ${num(r1)} и ${num(r2)}. ${big?'Больший':'Меньший'} корень: ${num(big?r2:r1)}.`,v:t=>t*t+p*t+q===0};},
+ ()=>{const a=pick([2,3]);let r1,r2;do{r1=rnd(-5,5);r2=rnd(-5,5);}while(r1>=r2);const b=-a*(r1+r2),c=a*r1*r2,D=b*b-4*a*c,sD=Math.round(Math.sqrt(D));
+  return {q:`Реши уравнение ${poly([[a,X2],[b,'x'],[c,'']])} = 0. Если корней два, запиши больший из них.`,a:r2,
+   why:`Дискриминант D = b² − 4ac = ${b*b} − 4·${a}·${par(c)} = ${D}, √D = ${sD}. Корни: x = (${num(-b)} ± ${sD}) : ${2*a}, то есть ${num(r1)} и ${num(r2)}. Больший — ${num(r2)}.`,v:t=>a*t*t+b*t+c===0&&D===sD*sD};},
+ ()=>{const a=rnd(2,5),r=rnd(2,9);
+  return {q:`Реши уравнение ${poly([[a,X2],[-a*r,'x']])} = 0. Если корней два, запиши больший из них.`,a:r,
+   why:`Выносим x за скобки: x(${poly([[a,'x'],[-a*r,'']])}) = 0. Произведение равно нулю, когда один из множителей равен нулю: x = 0 или ${poly([[a,'x']])} = ${a*r}, то есть x = ${r}. Больший корень — ${r}.`,v:t=>a*t*t-a*r*t===0};},
+ ()=>{let r1,r2;do{r1=rnd(-6,6);r2=rnd(-6,6);}while(r1===r2);const a=pick([1,2]),b=-a*(r1+r2),c=a*r1*r2,ask=pick(['sum','prod']);
+  const eq=poly([[a,X2],[b,'x'],[c,'']]);
+  return {q:`Корни уравнения ${eq} = 0 существуют. Не решая его, найди ${ask==='sum'?'сумму':'произведение'} корней.`,a:ask==='sum'?r1+r2:r1*r2,
+   why:`По теореме Виета для ax² + bx + c = 0 сумма корней равна −b : a, а произведение равно c : a. Здесь ${ask==='sum'?`−b : a = ${num(-b)} : ${a} = ${num(r1+r2)}`:`c : a = ${num(c)} : ${a} = ${num(r1*r2)}`}.`,v:t=>t===(ask==='sum'?r1+r2:r1*r2)};},
+ ()=>{const d=nz(-6,6),c=pick([2,3,4,5,6]),x=nz(-6,9),b=d-x,A=c*d,den=poly([[1,'x'],[b,'']]);
+  return {q:`Реши уравнение ${frac(A,den)} = ${c}`,a:x,
+   why:`Знаменатель не равен нулю. Умножаем обе части на (${den}): ${A} = ${c}·(${den}). Значит, ${den} = ${A} : ${c} = ${num(d)}, и x = ${num(d)} − ${par(b)} = ${num(x)}.`,v:t=>(t+b)!==0&&A===c*(t+b)};}
+]},
+{id:'b6',name:'Неравенства и функции',from:'8–9 класс',gens:[
+ ()=>{const a=rnd(2,6),b=nz(-9,9),c=rnd(-12,15),n=c-b,t=n/a,ans=Math.floor(t)+1,tt=Number.isInteger(t)?num(t):frac(num(n),a);
+  return {q:`Реши неравенство ${poly([[a,'x'],[b,'']])} &gt; ${num(c)}. Какое наименьшее целое число входит в решение?`,a:ans,
+   why:`Переносим ${num(b)}: ${poly([[a,'x']])} &gt; ${num(n)}. Делим на ${a} (число положительное, знак не меняется): x &gt; ${tt}. Наименьшее целое число, которое больше ${tt}, — это ${num(ans)}.`,v:t2=>a*t2+b>c&&a*(t2-1)+b<=c};},
+ ()=>{const a=rnd(2,6),b=nz(-9,9),c=rnd(-12,15),n=c-b,t=n/a,ans=Math.ceil(t)-1,tt=Number.isInteger(t)?num(t):frac(num(n),a);
+  return {q:`Реши неравенство ${poly([[a,'x'],[b,'']])} &lt; ${num(c)}. Какое наибольшее целое число входит в решение?`,a:ans,
+   why:`Переносим ${num(b)}: ${poly([[a,'x']])} &lt; ${num(n)}. Делим на ${a}: x &lt; ${tt}. Наибольшее целое число, которое меньше ${tt}, — это ${num(ans)}.`,v:t2=>a*t2+b<c&&a*(t2+1)+b>=c};},
+ ()=>{const a=nz(-3,3),b=nz(-6,6),c=nz(-9,9),n=nz(-4,4),ans=a*n*n+b*n+c;
+  return {q:`Функция задана формулой f(x) = ${poly([[a,X2],[b,'x'],[c,'']])}. Найди f(${num(n)}).`,a:ans,
+   why:`Подставляем x = ${num(n)}. Квадрат: ${par(n)}² = ${n*n}. Получаем ${par(a)}·${n*n} + ${par(b)}·${par(n)} + ${par(c)} = ${num(a*n*n)} + ${par(b*n)} + ${par(c)} = ${num(ans)}.`,v:t=>t===a*n*n+b*n+c};},
+ ()=>{const a=pick([1,2,3]),h=nz(-5,7),b=-2*a*h,c=rnd(-9,9);
+  return {q:`Найди абсциссу вершины параболы y = ${poly([[a,X2],[b,'x'],[c,'']])}.`,a:h,
+   why:`Абсцисса вершины: x₀ = −b : (2a) = ${num(-b)} : ${2*a} = ${num(h)}.`,v:t=>-b===2*a*t};},
+ ()=>{const p=nz(-6,6),q=nz(-6,6);
+  return {q:`График функции y = k/x проходит через точку (${num(p)}; ${num(q)}). Найди k.`,a:p*q,
+   why:`Из y = k/x получаем k = x·y = ${par(p)}·${par(q)} = ${num(p*q)}.`,v:t=>t/p===q};}
+]},
+{id:'b7',name:'Степень с целым показателем, стандартный вид',from:'8 класс',gens:[
+ ()=>{const b=pick([2,5]),n=b===2?rnd(1,5):rnd(1,3),a=1/(b**n);
+  return {q:`Найди значение выражения ${b}<sup>−${n}</sup>. Ответ запиши десятичной дробью.`,a:a,
+   why:`Отрицательный показатель означает «единица делить на степень»: ${b}<sup>−${n}</sup> = 1 : ${b}<sup>${n}</sup> = 1 : ${b**n} = ${dec(a)}.`,v:t=>Math.abs(t*b**n-1)<1e-9};},
+ ()=>{const b=pick([2,3,5]),m=rnd(2,4),n=m+rnd(1,3);
+  return {q:`Найди значение выражения ${b}<sup>−${m}</sup> · ${sup(b,n)}`,a:b**(n-m),
+   why:`При умножении степеней с одинаковым основанием показатели складываются: −${m} + ${n} = ${n-m}. ${sup(b,n-m)} = ${b**(n-m)}.`,v:t=>t*b**m===b**n};},
+ ()=>{const md=pick([[45,1],[12,1],[7,0],[625,2],[81,1],[3,0],[37,1]]),n=rnd(3,8),big=Math.random()<.5,digits=String(md[0]),mant=dec(md[0]/10**md[1]);let s;
+  if(big){s=grp(md[0]*10**(n-md[1]));}else{s='0,'+'0'.repeat(n+md[1]-digits.length)+digits;}
+  return {q:`Запиши число ${s} в стандартном виде a·10<sup>n</sup>, где 1 ≤ a &lt; 10. Чему равно n?`,a:big?n:-n,
+   why:big?`Чтобы получить ${mant}, запятую нужно сдвинуть на ${n} знаков влево. Число большое, поэтому показатель положительный: n = ${n}.`:`Чтобы получить ${mant}, запятую нужно сдвинуть на ${n} знаков вправо. Число меньше единицы, поэтому показатель отрицательный: n = −${n}.`,v:t=>Math.abs(md[0]/10**md[1]*10**t-(big?md[0]*10**(n-md[1]):md[0]/10**(n+md[1])))<1e-12*Math.max(1,10**Math.abs(t))};},
+ ()=>{const a=rnd(2,5),b=rnd(2,5),m=rnd(3,5),k=rnd(1,2),val=a*b*10**(m-k);
+  return {q:`Найди значение выражения (${a}·10<sup>${m}</sup>) · (${b}·10<sup>−${k}</sup>). Ответ запиши числом.`,a:val,
+   why:`Перемножаем числа: ${a}·${b} = ${a*b}. Показатели степеней складываем: ${m} + (−${k}) = ${m-k}. Получаем ${a*b}·10<sup>${m-k}</sup> = ${grp(val)}.`,v:t=>t===a*10**m*b/10**k};}
+]}
+];
+
+function parse(s){const t=String(s).replace(/[\s ]/g,'').replace(/[−–—]/g,'-').replace(',','.');if(!/^-?\d+(\.\d+)?$/.test(t))return NaN;return Number(t);}
+const same=(u,a)=>Math.abs(u-a)<1e-6;
+const ansText=a=>Number.isInteger(a)?grp(num(a)):dec(a);
+/*GEN-END*/
+
+/* ---------- прогресс ---------- */
+const STORE='tz_progress_v1';
+let P={diag:null,s1:false,items:[]};
+try{const r=localStorage.getItem(STORE);if(r)P=Object.assign(P,JSON.parse(r));}catch(e){}
+const save=()=>{try{localStorage.setItem(STORE,JSON.stringify(P));}catch(e){}};
+
+const app=document.getElementById('app');
+let S={screen:'home'};
+
+const SERIES_TITLES=['Шкатулка'];
+const TEETH=[14,24,18,28,20];
+const teeth=lit=>`<div class="teeth" role="img" aria-label="Выемки замка: открыто ${lit.filter(Boolean).length} из 5">`+TEETH.map((t,i)=>`<i class="${lit[i]?'on':''}" style="height:${t}px"></i>`).join('')+`</div>`;
+const kb=k=>`<button class="k" data-act="k" data-v="${k}">${k}</button>`;
+const bsb=`<button class="k alt" data-act="bs" aria-label="Стереть">⌫</button>`;
+const padHtml=()=>`<div class="pad">${['7','8','9'].map(kb).join('')}${bsb}${['4','5','6','−'].map(kb).join('')}${['1','2','3',','].map(kb).join('')}${kb('0')}<button class="k go" data-act="check">Проверить</button></div>`;
+const ansHtml=()=>`<div class="ans ${S.ans?'':'empty'}" id="ans" aria-live="polite">${S.ans||'ответ'}</div>`;
+
+function chipFor(sc){if(sc===2)return `<span class="chip good">уверенно · 2 из 2</span>`;if(sc===1)return `<span class="chip mid">шатко · 1 из 2</span>`;return `<span class="chip bad">пробел · 0 из 2</span>`;}
+
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function buildReport(){
+  const d=P.diag,L=['Тихая Заводь, результат','Кто: '+(P.nick||'без псевдонима')];
+  if(d){
+    const total=Object.values(d.scores).reduce((a,b)=>a+b,0);
+    L.push('Дата диагностики: '+(d.date||new Date().toLocaleDateString('ru-RU')));
+    L.push('Диагностика: верно '+total+' из 14');
+    BLOCKS.forEach(b=>L.push('- '+b.name+': '+d.scores[b.id]+' из 2'));
+  }else L.push('Диагностика: не пройдена');
+  L.push('Серия 1 «Шкатулка»: '+(P.s1?'пройдена':'не пройдена'));
+  return L.join('\n');
+}
+const repBox=()=>`${S.repmsg?`<div class="${S.repText?'small':'okmsg'}" role="status">${S.repmsg}</div>`:''}${S.repText?`<textarea class="rep" id="reptext" readonly rows="9">${esc(S.repText)}</textarea>`:''}`;
+const repPanel=()=>`<div class="panel"><div class="eyebrow">Результат</div><p class="small">Скопируй результат и вставь в сообщение.</p><label class="small" for="nick">Псевдоним (не настоящее имя)</label><input class="inp" id="nick" type="text" maxlength="20" autocomplete="off" value="${esc(P.nick||'')}" placeholder="например, Мира-2"><button class="btn" data-act="copyrep">Скопировать результат</button><div id="repbox">${repBox()}</div></div>`;
+
+/* ---------- экраны ---------- */
+function home(){
+  const d=P.diag;
+  let rows='';
+  BLOCKS.forEach((b,i)=>{
+    const sc=d?d.scores[b.id]:null;
+    const open=i===0;
+    const state=open?(P.s1?'<span class="chip good">пройдена</span>':'<span class="chip mid">открыта</span>'):'<span class="chip">скоро</span>';
+    rows+=`<div class="srow ${open?'':'locked'}"><div class="row"><div><div class="eyebrow">Серия ${i+1}${open?' · «'+SERIES_TITLES[0]+'»':''}</div><div class="nm">${b.name}</div></div>${state}</div><div class="row"><span class="sub">${b.from}</span>${sc!==null&&sc!==undefined?chipFor(sc):''}</div>${open?`<button class="btn ${P.s1?'ghost':''}" data-act="s1">${P.s1?'Пройти ещё раз':'Начать серию'}</button>`:''}</div>`;
+  });
+  const items=P.items.length?`<div class="panel"><div class="eyebrow">Улики</div><ul class="items">${P.items.map(t=>`<li>${t}</li>`).join('')}</ul></div>`:'';
+  return `
+  <div><div class="title">Тихая Заводь</div><p class="lead" style="margin-top:6px">Детектив для подготовки к ОГЭ по алгебре</p></div>
+  <div class="panel scene" style="font-size:17px">
+    <p>Мира приехала на лето к бабушке в маленький городок. На чердаке она нашла запертую шкатулку. Ключ к ней растёт из решённых задач, а рядом уже крутится сосед Данила, который слишком интересуется чужими находками.</p>
+  </div>
+  ${d?'':`<div class="panel"><h3>Сначала диагностика</h3><p class="lead">14 задач, по две на каждую тему. Подсказок нет, ответы вводятся цифрами. Занимает около 20 минут и показывает, где провалы.</p><button class="btn" data-act="diag">Начать диагностику</button></div>`}
+  ${d?`<button class="btn ghost" data-act="diag">Пройти диагностику заново</button>`:''}
+  <div class="series">${rows}</div>
+  ${repPanel()}
+  ${items}
+  <details><summary>О тренажёре</summary>
+    <p class="small">Задачи составлены по темам учебников Макарычева 7–9 классов в формате, близком к ОГЭ. Это не задания из банка ФИПИ. Числа меняются при каждом прохождении.</p>
+    <p class="small">Правильный ответ считает программа по тем же числам, что стоят в условии, поэтому ошибки в ключе нет.</p>
+    <p class="small">Диагностика из двух задач на тему даёт только ориентир, это не оценка знаний. Прогресс хранится в браузере на этом телефоне.</p>
+    <p class="small"><button class="link" data-act="reset" style="padding:0;text-decoration:underline">${S.confirmReset?'Нажми ещё раз, чтобы стереть прогресс':'Сбросить прогресс'}</button></p>
+  </details>`;
+}
+
+function qScreen(top,meta,fbHtml){
+  const q=S.qs[S.i];
+  return `
+  <div class="row"><button class="link" data-act="home">← На главную</button>${top}</div>
+  ${meta}
+  <div class="q">${q.q}</div>
+  ${ansHtml()}
+  <div class="msg" id="msg">${S.msg||''}</div>
+  ${fbHtml||padHtml()}`;
+}
+
+function diagScreen(){
+  const n=S.qs.length;
+  return qScreen(`<span class="small">${S.i+1} из ${n}</span>`,`<div class="bar"><b style="width:${Math.round(S.i/n*100)}%"></b></div><div class="eyebrow">${S.qs[S.i].bname}</div>`);
+}
+
+function pracScreen(){
+  const q=S.qs[S.i];let fb='';
+  if(S.fb==='ok')fb=`<div class="fb ok"><h3>Верно</h3><div class="why">${q.why}</div><button class="btn" data-act="next">Дальше</button></div>`;
+  else if(S.fb==='retry')fb=`<div class="fb no"><h3>Не сошлось</h3><div class="why">Проверь знаки и порядок действий. Есть ещё одна попытка.</div><button class="btn" data-act="again">Исправить ответ</button><button class="btn ghost" data-act="reveal">Показать разбор</button></div>`;
+  else if(S.fb==='show')fb=`<div class="fb no"><h3>Разбор</h3><div class="why">${q.why}</div><div class="why">Ответ: <b>${ansText(q.a)}</b></div><button class="btn" data-act="next">Дальше</button></div>`;
+  return qScreen(teeth(S.lit),`<div class="eyebrow">Задача ${S.i+1} из 5</div>`,fb);
+}
+
+function intro1(){return `
+  <button class="link" data-act="home">← На главную</button>
+  <div class="scene">
+    <div class="hand">Серия 1. Шкатулка</div>
+    <p>Чердак бабушкиного дома пахнет пылью и яблоками. За старым комодом Мира находит шкатулку размером с кирпич. Крышка заперта, а на замке пять выемок под бородки ключа.</p>
+    <p class="quote">На крышке записка бабушкиным почерком: «Ключ растёт из решённых задач».</p>
+    <p>Мира усмехается: бабушка всю жизнь преподавала математику. Она достаёт тетрадь и садится на пол.</p>
+  </div>
+  <div class="panel"><div class="eyebrow">Правила</div><p class="small">Пять задач — пять выемок. Если ответ не сошёлся, есть вторая попытка. Замок откроется, когда решено не меньше четырёх.</p></div>
+  <button class="btn" data-act="go1">Открыть шкатулку</button>`;}
+
+function result1(){
+  const n=S.lit.filter(Boolean).length;
+  if(n>=4)return `
+  <div class="row">${teeth(S.lit)}<span class="small">${n} из 5</span></div>
+  <div class="scene">
+    <div class="hand">Замок щёлкнул</div>
+    <p>Внутри связка писем, перевязанных лентой, и старая фотография: двое подростков на пристани. Один из них поразительно похож на Данилу.</p>
+    <p class="quote">На обороте дата «1998» и подпись: «Если найдёшь, не верь первому, кто скажет, что всё знает».</p>
+    <p>Внизу скрипнула лестница. Мира накрыла шкатулку пледом.</p>
+    <p>— Нашла что-нибудь? — спросил Данила с порога. Он улыбался слишком спокойно.</p>
+  </div>
+  <div class="panel"><div class="eyebrow">Новые улики</div><ul class="items"><li>Шкатулка с пятью выемками</li><li>Фотография с пристани, 1998 год</li></ul></div>
+  <p class="small">Серия 2 будет готова позже. Диагностика покажет, какие темы пойдут следом.</p>
+  <button class="btn" data-act="home">На главную</button>`;
+  return `
+  <div class="row">${teeth(S.lit)}<span class="small">${n} из 5</span></div>
+  <div class="scene">
+    <div class="hand">Замок не поддался</div>
+    <p>Ключ повернулся лишь наполовину. Мира перечитала записку и поняла, что где-то ошиблась в расчётах. Нужно решить хотя бы четыре задачи из пяти.</p>
+  </div>
+  <button class="btn" data-act="s1">Попробовать ещё раз</button>
+  <button class="btn ghost" data-act="home">На главную</button>`;
+}
+
+function diagResult(){
+  const d=P.diag;
+  const rows=BLOCKS.map(b=>`<div class="srow"><div><div class="nm" style="font-size:16px">${b.name}</div><div class="sub">${b.from}</div></div>${chipFor(d.scores[b.id])}</div>`).join('');
+  const errs=d.wrong.map(w=>`<details class="err"><summary>${w.bname}</summary><div class="q" style="font-size:18px">${w.q}</div><p class="small">Твой ответ: ${w.given||'—'}</p><div class="why">${w.why}</div><div class="why">Ответ: <b>${w.a}</b></div></details>`).join('');
+  const total=Object.values(d.scores).reduce((a,b)=>a+b,0);
+  return `
+  <div><div class="eyebrow">Диагностика</div><h2>Верно ${total} из 14</h2></div>
+  <div class="res">${rows}</div>
+  <p class="small">По две задачи на тему — это ориентир. Тема с пробелом означает «посмотри внимательнее», а не приговор.</p>
+  ${errs?`<h3>Разбор ошибок</h3>${errs}`:'<p>Ошибок нет. Для диагностики этого достаточно, дальше будет интереснее.</p>'}
+  ${repPanel()}
+  <button class="btn" data-act="home">На главную</button>`;
+}
+
+function render(){
+  let html='';
+  switch(S.screen){
+    case 'home':html=home();break;
+    case 'diag':html=diagScreen();break;
+    case 'diagres':html=diagResult();break;
+    case 'intro1':html=intro1();break;
+    case 'prac':html=pracScreen();break;
+    case 'res1':html=result1();break;
+  }
+  app.innerHTML=html;
+  window.scrollTo(0,0);
+}
+
+/* ---------- логика ---------- */
+function startDiag(){
+  const qs=[];
+  BLOCKS.forEach(b=>{shuffle(b.gens.map((_,i)=>i)).slice(0,2).forEach(i=>{const g=b.gens[i]();qs.push(Object.assign(g,{block:b.id,bname:b.name}));});});
+  S={screen:'diag',qs,i:0,res:[],ans:'',msg:''};render();
+}
+function startPrac(){
+  const idx=shuffle(BLOCKS[0].gens.map((_,i)=>i)).slice(0,5);
+  S={screen:'prac',qs:idx.map(i=>Object.assign(BLOCKS[0].gens[i](),{block:'b1',bname:BLOCKS[0].name})),i:0,lit:[false,false,false,false,false],tries:0,fb:null,ans:'',msg:''};render();
+}
+function typeKey(v){
+  if(S.fb)return;
+  if(v==='−'&&S.ans.length)return;
+  if(v===','&&(S.ans.includes(',')||!/\d/.test(S.ans)))return;
+  if(S.ans.length>=9)return;
+  S.ans+=v;S.msg='';updateAns();
+}
+function updateAns(){const el=document.getElementById('ans'),m=document.getElementById('msg');if(el){el.textContent=S.ans||'ответ';el.classList.toggle('empty',!S.ans);}if(m)m.textContent=S.msg||'';}
+function check(){
+  if(S.fb)return;
+  const n=parse(S.ans);
+  if(isNaN(n)){S.msg='Введи число';updateAns();return;}
+  const q=S.qs[S.i],ok=same(n,q.a);
+  if(S.screen==='diag'){
+    S.res.push({ok,q,given:S.ans});S.i++;S.ans='';S.msg='';
+    if(S.i>=S.qs.length)finishDiag();else render();
+  }else{
+    if(ok){S.lit[S.i]=true;S.fb='ok';}
+    else if(S.tries===0){S.tries=1;S.fb='retry';}
+    else S.fb='show';
+    render();
+  }
+}
+function finishDiag(){
+  const scores={};BLOCKS.forEach(b=>scores[b.id]=0);
+  const wrong=[];
+  S.res.forEach(r=>{if(r.ok)scores[r.q.block]++;else wrong.push({bname:r.q.bname,q:r.q.q,given:r.given,why:r.q.why,a:ansText(r.q.a)});});
+  P.diag={scores,wrong,date:new Date().toLocaleDateString('ru-RU')};S.repmsg='';S.repText=null;save();
+  S={screen:'diagres'};render();
+}
+function next(){
+  S.i++;S.tries=0;S.fb=null;S.ans='';S.msg='';
+  if(S.i>=5){
+    const n=S.lit.filter(Boolean).length;
+    if(n>=4){P.s1=true;['Шкатулка с пятью выемками','Фотография с пристани, 1998 год'].forEach(t=>{if(!P.items.includes(t))P.items.push(t);});save();}
+    S.screen='res1';
+  }
+  render();
+}
+function act(a,d){
+  switch(a){
+    case 'home':S={screen:'home'};break;
+    case 'diag':startDiag();return;
+    case 's1':S={screen:'intro1'};break;
+    case 'go1':startPrac();return;
+    case 'k':typeKey(d.v);return;
+    case 'bs':if(!S.fb){S.ans=S.ans.slice(0,-1);updateAns();}return;
+    case 'check':check();return;
+    case 'again':S.fb=null;S.ans='';S.msg='';break;
+    case 'reveal':S.fb='show';break;
+    case 'next':next();return;
+    case 'copyrep':{
+      const t=buildReport(),box=document.getElementById('repbox');
+      const done=ok=>{
+        if(ok){S.repmsg='Скопировано. Вставь в сообщение.';S.repText=null;}
+        else{S.repmsg='Скопировать само не вышло. Выдели текст ниже и скопируй.';S.repText=t;}
+        if(box){box.innerHTML=repBox();if(!ok){const ta=document.getElementById('reptext');if(ta){ta.focus();ta.select();}}}
+      };
+      try{navigator.clipboard.writeText(t).then(()=>done(true),()=>done(false));}catch(e){done(false);}
+      return;
+    }
+    case 'reset':
+      if(S.confirmReset){P={diag:null,s1:false,items:[]};save();S={screen:'home'};}
+      else{S.confirmReset=true;}
+      break;
+  }
+  render();
+}
+app.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b)act(b.dataset.act,b.dataset);});
+app.addEventListener('input',e=>{if(e.target.id==='nick'){P.nick=e.target.value.slice(0,20);save();}});
+document.addEventListener('keydown',e=>{
+  if(S.screen!=='diag'&&S.screen!=='prac')return;
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  if(/^\d$/.test(e.key))typeKey(e.key);
+  else if(e.key==='-')typeKey('−');
+  else if(e.key===','||e.key==='.')typeKey(',');
+  else if(e.key==='Backspace'){if(!S.fb){S.ans=S.ans.slice(0,-1);updateAns();}}
+  else if(e.key==='Enter'){if(S.screen==='prac'&&(S.fb==='ok'||S.fb==='show'))next();else check();}
+});
+render();
+</script>
+
+</body></html>
