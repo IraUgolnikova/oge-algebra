@@ -965,6 +965,210 @@ const GEO={name:'Геометрия',title:'Геометрия: задания 1
  lose:`<div class="hand">Ещё раз</div><p>Нужно верно решить хотя бы четыре задачи из пяти. Посмотри разборы: чаще всего ошибка в том, что перепутана формула или не тот угол взят из чертежа.</p>`,
  items:[]};
 
+/* ---------- Графики, задания 11 и 22 ----------
+   График рисует gPlot по функциям, которые лежат в задаче; ответ задан построением, а v проверяет его заново:
+   в №11 по значениям функции в точках, в №22 пересчётом точек пересечения на густой сетке. */
+const LET3=['А','Б','В'];
+let gPlotId=0;
+function gPlot(o){
+  const W=o.w||200,H=o.h||200,ml=o.ticks?28:8,mb=o.ticks?18:8,mt=8,mr=10,sx=(W-ml-mr)/(o.x1-o.x0),sy=(H-mt-mb)/(o.y1-o.y0);
+  const X=x=>ml+(x-o.x0)*sx,Y=y=>H-mb-(y-o.y0)*sy,id='gp'+(++gPlotId),pw=W-ml-mr,ph=H-mt-mb;
+  let s=`<defs><clipPath id="${id}"><rect x="${ml}" y="${mt}" width="${pw}" height="${ph}"/></clipPath></defs><rect x="${ml}" y="${mt}" width="${pw}" height="${ph}" style="fill:var(--card);stroke:var(--line);stroke-width:1"/>`;
+  const sxs=sx>=22?1:2,sys=sy>=14?1:2;
+  for(let x=Math.ceil(o.x0);x<=Math.floor(o.x1);x++){
+    s+=`<line x1="${X(x).toFixed(1)}" y1="${mt}" x2="${X(x).toFixed(1)}" y2="${mt+ph}" style="stroke:var(--line);stroke-width:1"/>`;
+    if(o.ticks&&x%sxs===0)s+=`<text x="${X(x).toFixed(1)}" y="${H-mb+11}" text-anchor="middle" style="fill:var(--muted);font-size:10px">${num(x)}</text>`;
+  }
+  for(let y=Math.ceil(o.y0);y<=Math.floor(o.y1);y++){
+    s+=`<line x1="${ml}" y1="${Y(y).toFixed(1)}" x2="${ml+pw}" y2="${Y(y).toFixed(1)}" style="stroke:var(--line);stroke-width:1"/>`;
+    if(o.ticks&&y%sys===0)s+=`<text x="${ml-4}" y="${Y(y).toFixed(1)}" text-anchor="end" dominant-baseline="central" style="fill:var(--muted);font-size:10px">${num(y)}</text>`;
+  }
+  if(o.y0<=0&&o.y1>=0)s+=`<line x1="${ml}" y1="${Y(0).toFixed(1)}" x2="${ml+pw}" y2="${Y(0).toFixed(1)}" style="stroke:var(--ink);stroke-width:1.8"/>`;
+  if(o.x0<=0&&o.x1>=0)s+=`<line x1="${X(0).toFixed(1)}" y1="${mt}" x2="${X(0).toFixed(1)}" y2="${mt+ph}" style="stroke:var(--ink);stroke-width:1.8"/>`;
+  if(!o.ticks){
+    s+=gTxt([X(o.x1)-7,Y(0)-8],'x',{s:12})+gTxt([X(0)+8,mt+8],'y',{s:12})+gTxt([X(1),Y(0)+9],'1',{s:10,c:'var(--muted)'})+gTxt([X(0)-7,Y(1)],'1',{s:10,c:'var(--muted)'});
+  }
+  s+=`<g clip-path="url(#${id})">`;
+  (o.curves||[]).forEach(c=>c.segs.forEach(([f,a,b])=>{
+    let d='',pen=false;
+    for(let i=0;i<=200;i++){const x=a+(b-a)*i/200,y=f(x);
+      if(!isFinite(y)||Math.abs(y)>400){pen=false;continue;}
+      d+=(pen?'L':'M')+X(x).toFixed(1)+' '+Y(y).toFixed(1);pen=true;}
+    s+=`<path d="${d}" style="fill:none;stroke:var(--accent);stroke-width:2.6;stroke-linejoin:round;stroke-linecap:round"/>`;
+  }));
+  (o.hl||[]).forEach(h=>{s+=`<line x1="${ml}" y1="${Y(h.y).toFixed(1)}" x2="${ml+pw}" y2="${Y(h.y).toFixed(1)}" style="stroke:var(--ink);stroke-width:1.5;stroke-dasharray:5 4"/>`;});
+  s+='</g>';
+  (o.hl||[]).forEach(h=>{s+=gTxt([ml+pw-26,Y(h.y)-8],h.t,{s:11});});
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${o.label||'График'}" style="width:100%;height:auto;display:block">${s}</svg>`;
+}
+
+/* №11: соответствие графиков и формул (или знаков коэффициентов). Элемент: {f, segs, text, pred, rs} */
+const SEG6=f=>[[f,-6,6]];
+const SEGH=f=>[[f,-6,-0.03],[f,0.03,6]];
+const byF=f=>g=>[-3,-2,-1,1,2,3].every(x=>Math.abs(g(x)-f(x))<1e-9);
+const termC=c=>c===0?'':(c>0?` + ${c}`:` − ${-c}`);
+const fLin=(k,b)=>`y = ${k===1?'':k===-1?'−':num(k)}x${termC(b)}`;
+const fPar=(s,c)=>`y = ${s<0?'−':''}x<sup>2</sup>${termC(c)}`;
+const fHyp=k=>`y = ${num(k)}/x`;
+function mk11(L,head,hints,idea,lead){
+  const n=L.length,ord=shuffle(L.map((_,i)=>i));
+  const figs=`<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:8px 0">${L.map((it,i)=>`<div style="flex:1 1 140px;max-width:200px;text-align:center">${gPlot({x0:-6,x1:6,y0:-6,y1:6,curves:[{segs:it.segs}],label:'График '+LET3[i]})}<b>${LET3[i]}</b></div>`).join('')}</div>`;
+  const opts=`<div class="sys">${ord.map((ix,pos)=>`<div>${pos+1}) ${L[ix].text}</div>`).join('')}</div>`;
+  const dig=L.map((_,i)=>ord.indexOf(i)+1).join('');
+  const lets=LET3.slice(0,n).join(', ');
+  return {q:`${head}${figs}${opts}В ответе запишите ${n===2?'две цифры':'три цифры'} подряд без пробелов: номера вариантов для ${lets} (в этом порядке).`,a:Number(dig),fmt:seqFmt,hints,
+   why:gSteps(L.map((it,i)=>`График ${LET3[i]}: ${it.rs} Это вариант ${ord.indexOf(i)+1}.`).concat([`Ответ: ${dig}.`])),idea,
+   v:t=>String(t)===L.map(it=>{const m=ord.map((ix,pos)=>L[ix].pred(it.f)?pos+1:0).filter(Boolean);return m.length===1?m[0]:'x';}).join('')};
+}
+const sgnTxt=(nm,s)=>`${nm} ${s>0?'&gt;':'&lt;'} 0`;
+/* знаки k и b у прямой */
+function g11a(n){
+  n=n||3;const cs=shuffle([[1,1],[1,-1],[-1,1],[-1,-1]]).slice(0,n);
+  const L=cs.map(([ks,bs])=>{const k=ks*pick([1,2,.5]),b=bs*rnd(1,3),f=x=>k*x+b;
+    return {f,segs:SEG6(f),text:sgnTxt('k',ks)+', '+sgnTxt('b',bs),pred:g=>sg(g(1)-g(0))===ks&&sg(g(0))===bs,
+     rs:`прямая ${ks>0?'идёт вверх':'идёт вниз'}, значит ${sgnTxt('k',ks)}; ось y она пересекает ${bs>0?'выше':'ниже'} начала координат, значит ${sgnTxt('b',bs)}.`};});
+  return mk11(L,'На рисунках изображены графики функций вида y = kx + b. Установите соответствие между графиками и знаками коэффициентов k и b.',
+   ['Коэффициент k отвечает за наклон: если прямая идёт слева направо вверх, то k больше нуля, если вниз, то меньше. Коэффициент b — это число, где прямая пересекает ось y.','Для каждого графика определи два признака: вверх или вниз идёт прямая и выше или ниже нуля она пересекает ось y. Потом найди такую же пару в списке.'],
+   'У прямой y = kx + b знак k виден по наклону, а знак b — по тому, где прямая пересекает ось y.');
+}
+/* знаки a и c у параболы */
+function g11b(n){
+  n=n||3;const cs=shuffle([[1,1],[1,-1],[-1,1],[-1,-1]]).slice(0,n);
+  const L=cs.map(([as,cs_])=>{
+    for(;;){const a=as*pick([1,.5,.25]),p=rnd(-2,2),q=rnd(-4,4),c=a*p*p+q;if(sg(c)!==cs_||Math.abs(c)<1||Math.abs(c)>4)continue;
+      const f=x=>a*(x-p)*(x-p)+q;
+      return {f,segs:SEG6(f),text:sgnTxt('a',as)+', '+sgnTxt('c',cs_),pred:g=>sg(g(1)+g(-1)-2*g(0))===as&&sg(g(0))===cs_,
+       rs:`ветви параболы направлены ${as>0?'вверх':'вниз'}, значит ${sgnTxt('a',as)}; ось y парабола пересекает ${cs_>0?'выше':'ниже'} начала координат, значит ${sgnTxt('c',cs_)}.`};}
+  });
+  return mk11(L,'На рисунках изображены графики функций вида y = ax² + bx + c. Установите соответствие между графиками и знаками коэффициентов a и c.',
+   ['Коэффициент a отвечает за направление ветвей: вверх при a больше нуля, вниз при a меньше нуля. Число c — это значение y при x = 0.','Для каждого графика определи: куда смотрят ветви и выше или ниже нуля парабола пересекает ось y. Потом найди такую же пару в списке.'],
+   'У параболы y = ax² + bx + c знак a виден по ветвям, а знак c — по точке пересечения с осью y.');
+}
+/* три функции разного вида */
+function g11c(){
+  const kh=pick([-6,-4,-2,2,4,6]),sp=pick([-1,1]),cp=rnd(-3,3),kl=pick([-2,-1,1,2]),bl=nz(-3,3);
+  const fh=x=>kh/x,fp=x=>sp*x*x+cp,fl=x=>kl*x+bl;
+  const L=[{f:fh,segs:SEGH(fh),text:fHyp(kh),rs:`две ветви в разных четвертях, значит это гипербола; ${kh>0?'ветви в I и III четвертях, k &gt; 0':'ветви во II и IV четвертях, k &lt; 0'}.`},
+   {f:fp,segs:SEG6(fp),text:fPar(sp,cp),rs:`одна кривая с вершиной на оси y, значит парабола; ветви ${sp>0?'вверх':'вниз'}, вершина в точке (0; ${num(cp)}).`},
+   {f:fl,segs:SEG6(fl),text:fLin(kl,bl),rs:`прямая; она ${kl>0?'идёт вверх':'идёт вниз'} и пересекает ось y в точке (0; ${num(bl)}).`}];
+  L.forEach(it=>{it.pred=byF(it.f);});
+  return mk11(shuffle(L),'На рисунках изображены графики функций. Установите соответствие между графиками и формулами.',
+   ['Сначала определи вид каждого графика: прямая, парабола (одна кривая с вершиной) или гипербола (две отдельные ветви). Формулы тоже бывают этих трёх видов: kx + b, ±x² + c и k/x.','Когда вид совпал, уточни по знаку: у гиперболы — в каких четвертях ветви, у параболы — куда смотрят ветви и где вершина, у прямой — наклон и пересечение с осью y.'],
+   'Формулу к графику подбираем в два шага: сначала вид (прямая, парабола, гипербола), потом знаки и числа.');
+}
+/* три прямые по формулам */
+function g11d(n){
+  n=n||3;const seen=[],L=[];
+  while(L.length<n){const k=pick([-2,-1,1,2]),b=nz(-3,3),key=k+':'+b;if(seen.includes(key))continue;
+    if(L.some(it=>it.k===k||it.b===b))continue;seen.push(key);const f=x=>k*x+b;
+    L.push({k,b,f,segs:SEG6(f),text:fLin(k,b),pred:byF(f),rs:`прямая ${k>0?'идёт вверх':'идёт вниз'}, а ось y пересекает в точке (0; ${num(b)}). Подходит ${fLin(k,b)}.`});}
+  return mk11(L,'На рисунках изображены графики функций вида y = kx + b. Установите соответствие между графиками и формулами.',
+   ['В формуле y = kx + b число b — это значение y в точке пересечения с осью y, а знак k показывает наклон.','Сначала по b найди прямую, которая пересекает ось y в нужной точке. Если таких две, отличи их по знаку k: вверх или вниз идёт прямая.'],
+   'У прямой число b — пересечение с осью y, знак k — наклон. Этих двух признаков хватает, чтобы выбрать формулу.');
+}
+/* три гиперболы по формулам */
+function g11e(){
+  const ks=shuffle([-6,-4,-2,2,4,6]);let ch;
+  for(;;){ch=ks.slice(0,3);ch=shuffle([-6,-4,-2,2,4,6]).slice(0,3);if(ch.some(k=>k>0)&&ch.some(k=>k<0))break;}
+  const L=ch.map(k=>{const f=x=>k/x;return {f,segs:SEGH(f),text:fHyp(k),pred:byF(f),
+    rs:`${k>0?'ветви в I и III четвертях, значит k &gt; 0':'ветви во II и IV четвертях, значит k &lt; 0'}; точка при x = ${k>0?'2':'−2'} имеет y = ${num(k/(k>0?2:-2))}, поэтому k = ${num(k)}. Подходит ${fHyp(k)}.`};});
+  return mk11(L,'На рисунках изображены графики функций вида y = k/x. Установите соответствие между графиками и формулами.',
+   ['Знак k виден по четвертям: ветви в I и III четвертях при k больше нуля, во II и IV при k меньше нуля.','Если знаки одинаковые, смотри на число: найди на графике точку с целыми координатами и перемножь x и y. Это и будет k.'],
+   'У гиперболы y = k/x знак k виден по четвертям, а число k — это произведение x и y у любой точки графика.');
+}
+/* три параболы y = ±x² + c */
+function g11f(){
+  const seen=[],L=[];
+  while(L.length<3){const s=pick([-1,1]),c=rnd(-3,3),key=s+':'+c;if(seen.includes(key))continue;
+    if(L.some(it=>it.s===s&&it.c===c))continue;if(L.some(it=>it.c===c))continue;seen.push(key);const f=x=>s*x*x+c;
+    L.push({s,c,f,segs:SEG6(f),text:fPar(s,c),pred:byF(f),rs:`ветви ${s>0?'вверх':'вниз'}, вершина на оси y в точке (0; ${num(c)}). Подходит ${fPar(s,c)}.`});}
+  return mk11(L,'На рисунках изображены графики функций вида y = ±x² + c. Установите соответствие между графиками и формулами.',
+   ['У параболы y = x² + c вершина лежит на оси y в точке (0; c). Знак перед x² задаёт направление ветвей: плюс — вверх, минус — вниз.','Найди вершину каждой параболы и посмотри, куда направлены ветви. По этой паре признаков выбери формулу.'],
+   'У параболы y = ±x² + c вершина стоит в точке (0; c), а знак перед x² показывает, куда смотрят ветви.');
+}
+const genG11=()=>pick([g11a,g11b,g11c,g11d,g11e,g11f])();
+const easy11=()=>pick([g11a,g11d])(2);
+
+/* №22: график с модулем или кусочный, число общих точек с горизонтальной прямой y = m.
+   Условие без рисунка (на экзамене график строит сам ученик), рисунок показан в разборе. */
+function cnt22(segs,m){
+  let c=0;
+  for(const [f,a,b] of segs){let prev=0;
+    for(let x=a;x<=b+1e-12;x+=1/16){const g=f(x)-m;
+      if(Math.abs(g)<1e-9)c++;else if((prev>0&&g<0)||(prev<0&&g>0))c++;
+      prev=Math.abs(g)<1e-9?0:g;}}
+  return c;
+}
+function v22(segs,k,kind){
+  return t=>{
+    if(kind==='cnt'){let n=0;for(let m=-24;m<=24;m++)if(cnt22(segs,m)===k)n++;return t===n;}
+    const S=[];for(let m=-24;m<=24;m+=.5)if(cnt22(segs,m)===k)S.push(m);
+    if(kind==='one')return S.length===1&&Math.abs(S[0]-t)<1e-9;
+    if(kind==='min')return S.length>0&&Math.abs(S[0]-t)<1e-9;
+    if(kind==='sum')return S.length===2&&Math.abs(S[0]+S[1]-t)<1e-9;
+    return false;
+  };
+}
+const kw={1:'одну общую точку',2:'ровно две общие точки',3:'ровно три общие точки',4:'ровно четыре общие точки'};
+const ints=(lo,hi)=>{const r=[];for(let i=lo;i<=hi;i++)r.push(num(i));return r.join(', ');};
+/* семейства: txt — формула, segs — для проверки и рисунка, low — нижний уровень рисунка, lev — особые уровни m, st1 — как строить, prof — сколько точек при каком m */
+const F22={
+ A:p=>c=>({txt:`y = x<sup>2</sup> − ${2*p}|x|${termC(c)}`,segs:[[x=>x*x-2*p*Math.abs(x)+c,-12,12]],low:c-p*p,lev:[c-p*p,c],
+  st1:`Раскрываем модуль. При x ≥ 0 получаем y = x<sup>2</sup> − ${2*p}x${termC(c)}: парабола с вершиной (${p}; ${num(c-p*p)}). При x &lt; 0 получаем y = x<sup>2</sup> + ${2*p}x${termC(c)}: вершина (−${p}; ${num(c-p*p)}). График симметричен относительно оси y; при x = 0 значение y = ${num(c)}, то есть между двумя «ямами» стоит «горб».`,
+  prof:`Двигаем прямую y = m снизу вверх. Ниже ${num(c-p*p)}: общих точек нет. При m = ${num(c-p*p)}: две (дно обеих ям). Между ${num(c-p*p)} и ${num(c)}: четыре. При m = ${num(c)}: три (верхушка «горба» и по точке на каждой ветви). Выше ${num(c)}: две.`,
+  ans:{one3:c,cnt4:[c-p*p+1,c-1],min2:c-p*p}}),
+ B:p=>c=>({txt:`y = |x<sup>2</sup> − ${p*p}|${termC(c)}`,segs:[[x=>Math.abs(x*x-p*p)+c,-12,12]],low:c,lev:[c,c+p*p],
+  st1:`Выражение x<sup>2</sup> − ${p*p} равно нулю при x = −${p} и x = ${p}, между ними оно отрицательно. Поэтому на отрезке от −${p} до ${p} часть параболы «переворачивается» вверх: вершина (0; ${num(c+p*p)}). Вне отрезка график — обычная парабола y = x<sup>2</sup> − ${p*p}, сдвинутая по вертикали на ${num(c)}: она касается уровня ${num(c)} в точках (−${p}; ${num(c)}) и (${p}; ${num(c)}).`,
+  prof:`Двигаем прямую y = m снизу вверх. Ниже ${num(c)}: общих точек нет. При m = ${num(c)}: две. Между ${num(c)} и ${num(c+p*p)}: четыре. При m = ${num(c+p*p)}: три (вершина «горба» и по точке на ветвях). Выше ${num(c+p*p)}: две.`,
+  ans:{one3:c+p*p,cnt4:[c+1,c+p*p-1],min2:c}}),
+ D:p=>c=>({txt:`y = |x<sup>2</sup> − ${2*p}x|${termC(c)}`,segs:[[x=>Math.abs(x*x-2*p*x)+c,-12,12]],low:c,lev:[c,c+p*p],
+  st1:`Выражение x<sup>2</sup> − ${2*p}x = x(x − ${2*p}) равно нулю при x = 0 и x = ${2*p}, между ними оно отрицательно. Поэтому на отрезке от 0 до ${2*p} часть параболы «переворачивается» вверх: вершина (${p}; ${num(c+p*p)}). Вне отрезка график — обычная парабола, сдвинутая по вертикали на ${num(c)}: она проходит через точки (0; ${num(c)}) и (${2*p}; ${num(c)}).`,
+  prof:`Двигаем прямую y = m снизу вверх. Ниже ${num(c)}: общих точек нет. При m = ${num(c)}: две. Между ${num(c)} и ${num(c+p*p)}: четыре. При m = ${num(c+p*p)}: три (вершина «горба» и по точке на ветвях). Выше ${num(c+p*p)}: две.`,
+  ans:{one3:c+p*p,cnt4:[c+1,c+p*p-1],min2:c}}),
+ C:p=>c=>{const k=pick([1,2]);return {txt:`<div class="sys"><div>y = ${k===1?'':k}x${termC(c)}, если x &lt; 0;</div><div>y = x<sup>2</sup> − ${2*p}x${termC(c)}, если x ≥ 0.</div></div>`,segs:[[x=>k*x+c,-12,-1/16],[x=>x*x-2*p*x+c,0,12]],low:c-p*p,lev:[c-p*p,c],
+  st1:`Левая часть (x &lt; 0) — луч прямой y = ${k===1?'':k}x${termC(c)}: он подходит к точке (0; ${num(c)}), но саму точку не включает. Правая часть (x ≥ 0) — часть параболы с вершиной (${p}; ${num(c-p*p)}); она начинается в точке (0; ${num(c)}), и эта точка принадлежит графику.`,
+  prof:`Двигаем прямую y = m снизу вверх. Ниже ${num(c-p*p)}: одна точка (на луче). При m = ${num(c-p*p)}: две (луч и вершина параболы). Между ${num(c-p*p)} и ${num(c)}: три (одна на луче и две на параболе). При m = ${num(c)}: две (точка (0; ${num(c)}) и точка на параболе справа; луч до уровня ${num(c)} не доходит). Выше ${num(c)}: одна (только парабола).`,
+  ans:{cnt3:[c-p*p+1,c-1],sum2:2*c-p*p,lo:c-p*p,hi:c}};}
+};
+function g22(kind){
+  const fams=kind==='one'?['A','B','D']:kind==='min'?['A','B','D']:kind==='sum'?['C']:['A','B','C','D'];
+  const fam=pick(fams),p=kind==='cnt'?pick([2,3]):pick([1,2,3]),c=rnd(-3,3),F=F22[fam](p)(c),A=F.ans;
+  let k,ans,ask,res,list=null;
+  if(kind==='one'){k=3;ans=A.one3;ask=`Найдите значение m, при котором прямая y = m имеет с графиком ровно три общие точки.`;res=`Три общие точки только при m = ${num(ans)}. Ответ: ${num(ans)}.`;}
+  else if(kind==='min'){k=2;ans=A.min2;ask=`Найдите наименьшее значение m, при котором прямая y = m имеет с графиком ровно две общие точки.`;res=`Две общие точки при m = ${num(ans)} и при всех m больше ${num(fam==='A'?A.one3:ans+p*p)}. Самое маленькое из таких значений — ${num(ans)}. Ответ: ${num(ans)}.`;}
+  else if(kind==='sum'){k=2;ans=A.sum2;ask=`Найдите сумму всех значений m, при которых прямая y = m имеет с графиком ровно две общие точки.`;res=`Две общие точки при m = ${num(A.lo)} и m = ${num(A.hi)}. Сумма: ${num(A.lo)} + ${par(A.hi)} = ${num(ans)}. Ответ: ${num(ans)}.`;}
+  else{const r=fam==='C'?A.cnt3:A.cnt4;k=fam==='C'?3:4;ans=r[1]-r[0]+1;ask=`Сколько существует целых значений m, при которых прямая y = m имеет с графиком ровно ${k===3?'три':'четыре'} общие точки?`;
+    res=`${k===3?'Три':'Четыре'} общие точки при m строго между ${num(r[0]-1)} и ${num(r[1]+1)}. Целые значения: ${ints(r[0],r[1])}. Их ${ans}. Ответ: ${ans}.`;}
+  const y0=Math.floor(F.low)-2,svg=`<div style="max-width:360px;margin:8px auto">${gPlot({w:320,h:240,x0:-6,x1:6,y0,y1:y0+13,ticks:true,curves:[{segs:F.segs}],hl:F.lev.map(m=>({y:m,t:'y = '+num(m)})),label:'График функции с горизонтальными прямыми'})}</div>`;
+  const segs=F.segs;
+  return {q:`Построй в тетради график функции ${fam==='C'?`:${F.txt}`:`${F.txt}.`} ${ask} (На экзамене к этому заданию нужно записать решение с графиком; здесь проверяется только ответ.)`,a:ans,
+   hints:['Сначала построй график по частям: раскрой модуль или рассмотри каждую формулу на своём промежутке. Отметь вершины и точки, где график пересекает оси.','Прямая y = m горизонтальная. Двигай её снизу вверх и считай, сколько раз она пересекает график. Число точек меняется на уровне вершин и «горба».'],
+   why:gSteps([F.st1,`Пунктиром показаны уровни, на которых меняется число точек.${svg}`,F.prof,res]),
+   idea:'График с модулем строим по частям. Число общих точек с горизонтальной прямой считаем, двигая прямую снизу вверх: оно меняется на уровне вершин и «горба».',
+   v:v22(segs,k,kind)};
+}
+function easy22(){
+  const p=rnd(1,4),c=rnd(-4,4),f=x=>x*x-2*p*x+c,y0=Math.floor(c-p*p)-2;
+  const svg=`<div style="max-width:360px;margin:8px auto">${gPlot({w:320,h:240,x0:-3,x1:9,y0,y1:y0+13,ticks:true,curves:[{segs:[[f,-3,9]]}],hl:[{y:c-p*p,t:'y = '+num(c-p*p)}],label:'Парабола и горизонтальная прямая'})}</div>`;
+  return {q:`Дана функция y = x<sup>2</sup> − ${2*p}x${termC(c)}. Найдите значение m, при котором прямая y = m имеет с графиком ровно одну общую точку.`,a:c-p*p,
+   hints:['График — парабола. Горизонтальная прямая касается параболы в одной точке только на уровне вершины.','Найди вершину: абсцисса x = −b : (2a), потом подставь её в формулу.'],
+   why:gSteps([`Это парабола с ветвями вверх. Абсцисса вершины: x = ${2*p} : 2 = ${p}.`,`Ордината вершины: y = ${p}<sup>2</sup> − ${2*p} · ${p}${termC(c)} = ${num(c-p*p)}. Прямая y = m касается параболы в одной точке при m = ${num(c-p*p)}.`])+svg,
+   idea:'Одна общая точка у горизонтальной прямой и параболы — на уровне вершины.',
+   v:v22([[f,-12,12]],1,'one')};
+}
+const genG22=()=>g22(pick(['one','cnt','min','sum']));
+
+const GR={name:'Графики',title:'Графики: задания 11 и 22',n:5,need:4,
+ intro:`<p>Графики встречаются в двух заданиях ОГЭ: №11 (по графикам нужно определить формулу или знаки коэффициентов) и №22 (по формуле построить график и посчитать общие точки с прямой). Все графики здесь рисует программа по тем же числам, что и формула.</p>
+    <ul class="items"><li>№11: прямая, парабола, гипербола, соответствие графиков и формул;</li><li>№22: график с модулем или из двух частей и число общих точек с горизонтальной прямой y = m.</li></ul>
+    <p class="quote">Порядок работы в №11: определи вид графика, потом знаки и числа. В №22: построй график по частям и двигай прямую y = m снизу вверх. Если не получается, нажми «Подсказка»: их две.</p>`,
+ rules:'Пять заданий: два из №11 и три из №22. Если ответ не сошёлся, есть вторая попытка. Тема засчитана, когда верно не меньше четырёх. №11: пиши цифры подряд, в порядке А, Б, В. В №22 рисунок появляется в разборе, а график ты строишь сам в тетради.',
+ start:'Начать',
+ win:`<div class="hand">Хорошо</div><p>Четыре и больше верных из пяти. Нажми «Ещё один набор»: формулы и числа будут другие.</p>`,
+ lose:`<div class="hand">Ещё раз</div><p>Нужно верно решить хотя бы четыре задачи из пяти. Посмотри разборы: чаще всего путают знак коэффициента или считают не те точки пересечения.</p>`,
+ items:[]};
+const genGr5=()=>[pick([g11a,g11b]),pick([g11c,g11d,g11e,g11f]),()=>g22('one'),()=>g22('cnt'),()=>g22(pick(['min','sum']))].map(g=>g());
+
 /* ---------- Диагностика по номерам заданий ОГЭ ----------
    Практика №1–5 целиком (как на экзамене) и по одному заданию на типы 6, 7, 8, 9, 10, 12, 13, 14, 20, 21.
    Если тип не решён, даётся второй вариант: так видно, невнимательность это или пробел. */
@@ -1052,6 +1256,7 @@ const DIAG_TYPES=[
  {code:'8',name:'Значение выражения со степенями',mk:()=>Math.random()<.5?genExpr8():pick([BLOCKS[1].gens[0],BLOCKS[1].gens[1],BLOCKS[6].gens[1]])(),easy:()=>BLOCKS[1].gens[0]()},
  {code:'9',name:'Уравнение',mk:()=>pick([BLOCKS[4].gens[0],BLOCKS[4].gens[1],BLOCKS[4].gens[4],BLOCKS[0].gens[6],BLOCKS[0].gens[8]])(),easy:()=>BLOCKS[0].gens[0]()},
  {code:'10',name:'Вероятность',mk:genProb10,easy:easy10},
+ {code:'11',name:'Графики: соответствие графика и формулы',mk:genG11,easy:easy11},
  {code:'12',name:'Расчёт по формуле',mk:genForm12,easy:easy12},
  {code:'13',name:'Система неравенств',mk:genSys13,easy:()=>BLOCKS[5].gens[0]()},
  {code:'14',name:'Прогрессия в задаче',mk:genProg14,easy:easy14},
@@ -1061,7 +1266,8 @@ const DIAG_TYPES=[
  {code:'18',name:'Площадь на клетчатой бумаге',mk:genG18,easy:easy18},
  {code:'19',name:'Какие утверждения верны (геометрия)',mk:genG19,easy:easy19},
  {code:'20',name:'Неравенство (метод интервалов)',mk:genIneq,easy:()=>genIneq('C')},
- {code:'21',name:'Текстовая задача на движение',mk:genMove21,easy:easy21}
+ {code:'21',name:'Текстовая задача на движение',mk:genMove21,easy:easy21},
+ {code:'22',name:'График и число общих точек с прямой (часть 2)',mk:genG22,easy:easy22}
 ];
 function makeDiag(){
   const qs=[],addT=c=>{const ty=DIAG_TYPES.find(t=>t.code===c),q=ty.mk();qs.push(Object.assign(q,{code:ty.code,tname:ty.name,bname:'№'+ty.code+'. '+ty.name,mk:ty.easy}));};
@@ -1071,7 +1277,7 @@ function makeDiag(){
   const sc=pick(PRAC_GENS)();
   sc.qs.forEach((q,i)=>{delete q.hints;delete q.idea;qs.push(Object.assign(q,{code:'1–5',tname:'Практика',bname:'Практика №1–5 · '+sc.title+' · вопрос '+(i+1),parts:sc.parts,ctxTitle:sc.title}));});
   qs[3].intro={h:'Пять вопросов об одной ситуации',t:'Следующие пять вопросов относятся к одной жизненной ситуации. Условие лежит в блоке над каждым вопросом, вопросы идут по порядку. Читай внимательно: нужные числа берутся из условия.'};
-  ['7','10','12','13','14','15','16','17','18','19','20','21'].forEach(addT);
+  ['7','10','11','12','13','14','15','16','17','18','19','20','21','22'].forEach(addT);
   return qs;
 }
 const PRAC={name:'Практика №1–5',title:'Практика №1–5: первые задания ОГЭ',n:5,need:4,
@@ -1082,7 +1288,7 @@ const PRAC={name:'Практика №1–5',title:'Практика №1–5: �
  win:`<div class="hand">Хорошо</div><p>Четыре и больше верных из пяти. Первые задания ОГЭ дают 5 баллов, и теперь ты знаешь, как к ним подходить. Нажми «Ещё один сценарий»: ситуация будет другой.</p>`,
  lose:`<div class="hand">Ещё раз</div><p>Нужно верно решить хотя бы четыре задачи из пяти. Посмотри разборы: чаще всего ошибка в том, что взято не то число из таблицы.</p>`,
  items:[]};
-const ser=si=>si==='ineq'?INEQ:si==='prac'?PRAC:si==='geo'?GEO:SERIES[si];
+const ser=si=>si==='ineq'?INEQ:si==='prac'?PRAC:si==='geo'?GEO:si==='gr'?GR:SERIES[si];
 const THEIGHTS=[14,24,18,28,20,16,26,22];
 const teeth=lit=>`<div class="teeth" role="img" aria-label="Решено ${lit.filter(Boolean).length} из ${lit.length}">`+lit.map((v,i)=>`<i class="${v?'on':''}" style="height:${THEIGHTS[i%THEIGHTS.length]}px"></i>`).join('')+`</div>`;
 const kb=k=>`<button class="k" data-act="k" data-v="${k}">${k}</button>`;
@@ -1105,6 +1311,7 @@ function buildReport(){
   L.push('Тема «'+INEQ.name+'»: '+(P.done.ineq?'пройдена':'не пройдена'));
   L.push('Практика №1–5: пройдено сценариев '+(P.pracN||0));
   L.push('Геометрия №15–19: пройдено наборов '+(P.geoN||0));
+  L.push('Графики №11 и №22: пройдено наборов '+(P.grN||0));
   return L.join('\n');
 }
 const repBox=()=>`${S.repmsg?`<div class="${S.repText?'small':'okmsg'}" role="status">${S.repmsg}</div>`:''}${S.repText?`<textarea class="rep" id="reptext" readonly rows="9">${esc(S.repText)}</textarea>`:''}`;
@@ -1127,11 +1334,12 @@ function home(){
   <div class="panel scene" style="font-size:17px">
     <p>Мира приехала на лето к бабушке в маленький городок. На чердаке она нашла запертую шкатулку. Ключ к ней растёт из решённых задач, а рядом уже крутится сосед Данила, который слишком интересуется чужими находками.</p>
   </div>
-  ${d?'':`<div class="panel"><h3>Сначала диагностика</h3><p class="lead">Задания в формате ОГЭ: пять заданий практики и по одному на типы №6–10, 12–21 (в том числе геометрия 15–19). Подсказок нет. Если задание не получилось, дальше будет такое же, но проще. Это не оценка, а карта: если многое не получится, это нормально. Если не знаешь, нажми «Не знаю»: так честнее, чем угадывать. Около 40 минут, лучше пройти за один раз: если закрыть страницу посередине, придётся начинать заново.</p><button class="btn" data-act="diag">Начать диагностику</button></div>`}
+  ${d?'':`<div class="panel"><h3>Сначала диагностика</h3><p class="lead">Задания в формате ОГЭ: пять заданий практики и по одному на типы №6–22 (в том числе графики 11 и 22, геометрия 15–19). Подсказок нет. Если задание не получилось, дальше будет такое же, но проще. Это не оценка, а карта: если многое не получится, это нормально. Если не знаешь, нажми «Не знаю»: так честнее, чем угадывать. Около 45 минут, лучше пройти за один раз: если закрыть страницу посередине, придётся начинать заново.</p><button class="btn" data-act="diag">Начать диагностику</button></div>`}
   ${d?`<button class="btn ghost" data-act="diag">Пройти диагностику заново</button>`:''}
   <div class="series">${rows}</div>
   <div class="panel"><div class="eyebrow">Первые задания ОГЭ</div><div class="nm">Практика №1–5</div><p class="small">Одна жизненная ситуация (шины, участок, бумага, электричество) и пять вопросов. Условие, две подсказки и разбор каждого шага. Ситуации и числа меняются.</p>${P.pracN?`<span class="chip good">пройдено: ${P.pracN}</span>`:''}<button class="btn ${P.pracN?'ghost':''}" data-act="ser" data-i="prac">${P.pracN?'Ещё один сценарий':'Начать'}</button></div>
   <div class="panel"><div class="eyebrow">Геометрия, задания 15–19</div><div class="nm">Геометрия</div><p class="small">Пять заданий: углы и диагонали, окружность, площади, клетчатая бумага, «какие утверждения верны». Чертёж рисуется по числам задачи, две подсказки и разбор по шагам. Числа меняются.</p>${P.geoN?`<span class="chip good">пройдено: ${P.geoN}</span>`:''}<button class="btn ${P.geoN?'ghost':''}" data-act="ser" data-i="geo">${P.geoN?'Ещё один набор':'Начать'}</button></div>
+  <div class="panel"><div class="eyebrow">Графики, задания 11 и 22</div><div class="nm">Графики</div><p class="small">Пять заданий: соответствие графика и формулы (прямая, парабола, гипербола) и график с модулем или из двух частей с числом общих точек с прямой. Графики рисуются по числам задачи, две подсказки и разбор по шагам. Числа меняются.</p>${P.grN?`<span class="chip good">пройдено: ${P.grN}</span>`:''}<button class="btn ${P.grN?'ghost':''}" data-act="ser" data-i="gr">${P.grN?'Ещё один набор':'Начать'}</button></div>
   <div class="panel"><div class="eyebrow">Отдельная тема</div><div class="nm">${INEQ.name}</div><p class="small">Урок и 8 задач с подробным разбором каждого шага. Можно проходить в любой момент.</p><span>${P.done.ineq?'<span class="chip good">пройдена</span>':''}</span><button class="btn ${P.done.ineq?'ghost':''}" data-act="ser" data-i="ineq">${P.done.ineq?'Пройти ещё раз':'Открыть урок'}</button></div>
   ${repPanel()}
   ${items}
@@ -1184,7 +1392,7 @@ function intro(){const s=ser(S.si);return `
 function result(){
   const s=ser(S.si),n=S.lit.filter(Boolean).length,head=`<div class="row">${teeth(S.lit)}<span class="small">${n} из ${S.lit.length}</span></div>`;
   if(n>=s.need){
-    const nextBtn=S.si==='prac'?`<button class="btn" data-act="ser" data-i="prac">Ещё один сценарий</button><button class="btn ghost" data-act="home">На главную</button>`:S.si==='geo'?`<button class="btn" data-act="ser" data-i="geo">Ещё один набор</button><button class="btn ghost" data-act="home">На главную</button>`:S.si==='ineq'?`<button class="btn" data-act="home">На главную</button>`:S.si+1<SERIES.length?`<button class="btn" data-act="ser" data-i="${S.si+1}">К серии ${S.si+2}</button><button class="btn ghost" data-act="home">На главную</button>`:`<p class="small">Следующая серия будет готова позже.</p><button class="btn" data-act="home">На главную</button>`;
+    const nextBtn=S.si==='gr'?`<button class="btn" data-act="ser" data-i="gr">Ещё один набор</button><button class="btn ghost" data-act="home">На главную</button>`:S.si==='prac'?`<button class="btn" data-act="ser" data-i="prac">Ещё один сценарий</button><button class="btn ghost" data-act="home">На главную</button>`:S.si==='geo'?`<button class="btn" data-act="ser" data-i="geo">Ещё один набор</button><button class="btn ghost" data-act="home">На главную</button>`:S.si==='ineq'?`<button class="btn" data-act="home">На главную</button>`:S.si+1<SERIES.length?`<button class="btn" data-act="ser" data-i="${S.si+1}">К серии ${S.si+2}</button><button class="btn ghost" data-act="home">На главную</button>`:`<p class="small">Следующая серия будет готова позже.</p><button class="btn" data-act="home">На главную</button>`;
     return `${head}
   <div class="scene">${s.win}</div>
   ${s.items.length?`<div class="panel"><div class="eyebrow">Новые улики</div><ul class="items">${s.items.map(t=>`<li>${t}</li>`).join('')}</ul></div>`:''}
@@ -1207,17 +1415,18 @@ function diagAdvice(d){
     else if(t.code==='9'){if(!adv.some(a=>a.act==='s0'))adv.push({t:'Серия 1 «Шкатулка» (уравнения, №9)',act:'s0'});}
     else if(t.code==='8'){if(!adv.some(a=>a.act==='s1'))adv.push({t:'Серия 2 «Письма» (степени и выражения, №8)',act:'s1'});}
     else if(['15','16','17','18','19'].includes(t.code)){if(!adv.some(a=>a.act==='geo'))adv.push({t:'Геометрия (задания 15–19)',act:'geo'});}
+    else if(t.code==='11'||t.code==='22'){if(!adv.some(a=>a.act==='gr'))adv.push({t:'Графики (задания 11 и 22)',act:'gr'});}
   });
-  const later=[...bad,...mid].filter(t=>!['9','8','13','20','15','16','17','18','19'].includes(t.code));
+  const later=[...bad,...mid].filter(t=>!['9','8','13','20','15','16','17','18','19','11','22'].includes(t.code));
   return {adv,later};
 }
 function diagResult(){
   const d=P.dg,{adv,later}=diagAdvice(d);
   const rows=`<div class="srow"><div><div class="nm" style="font-size:16px">Практика №1–5</div><div class="sub">Верно ${d.prac} из ${d.pracN}</div></div>${stChip(pracSt(d))}</div>`
    +d.types.map(t=>`<div class="srow"><div class="nm" style="font-size:16px">№${t.code}. ${t.name}</div>${stChip(t.st)}</div>`).join('')
-   +`<div class="srow locked"><div><div class="nm" style="font-size:16px">Графики и часть 2 (№11, 22–25)</div><div class="sub">Появится в следующих модулях</div></div><span class="chip">скоро</span></div>`;
+   +`<div class="srow locked"><div><div class="nm" style="font-size:16px">Часть 2 (№23–25)</div><div class="sub">Появится в следующих модулях</div></div><span class="chip">скоро</span></div>`;
   const errs=d.wrong.map(w=>`<details class="err"><summary>${w.bname}</summary>${w.ctx?`<div class="small">${w.ctx}</div>`:''}<div class="q" style="font-size:18px">${w.q}</div><p class="small">Твой ответ: ${w.given}</p><div class="why">${w.why}</div><div class="why">Ответ: <b>${w.a}</b></div></details>`).join('');
-  const btn={geo:'ser" data-i="geo',prac:'ser" data-i="prac',ineq:'ser" data-i="ineq',s0:'ser" data-i="0',s1:'ser" data-i="1'};
+  const btn={gr:'ser" data-i="gr',geo:'ser" data-i="geo',prac:'ser" data-i="prac',ineq:'ser" data-i="ineq',s0:'ser" data-i="0',s1:'ser" data-i="1'};
   return `
   <div><div class="eyebrow">Диагностика</div><h2>Карта по заданиям ОГЭ</h2></div>
   <div class="res">${rows}</div>
@@ -1261,6 +1470,7 @@ function startPrac(si){
     P.lastPrac=sc.title;save();parts=sc.parts;ctxTitle=sc.title;
     qs=sc.qs.map(q=>Object.assign(q,{block:'prac',bname:PRAC.name}));
   }else if(si==='geo'){qs=[genG15,genG16,genG17,genG18,genG19].map(g=>Object.assign(g(),{block:'geo',bname:GEO.name}));
+  }else if(si==='gr'){qs=genGr5().map(g=>Object.assign(g,{block:'gr',bname:GR.name}));
   }else if(si==='ineq'){qs=[];const seen=new Set();while(qs.length<n){const g=genIneq();if(!seen.has(g.q)){seen.add(g.q);qs.push(Object.assign(g,{block:'ineq',bname:INEQ.name}));}}}
   else{const b=BLOCKS[si],idx=shuffle(b.gens.map((_,i)=>i)).slice(0,n);qs=idx.map(i=>Object.assign(b.gens[i](),{block:b.id,bname:b.name}));}
   S={screen:'prac',si,qs,parts,ctxTitle,hint:0,i:0,lit:Array(n).fill(false),tries:0,fb:null,ans:'',msg:''};render();
@@ -1303,7 +1513,7 @@ function next(){
   S.i++;S.tries=0;S.fb=null;S.ans='';S.msg='';S.hint=0;
   if(S.i>=S.qs.length){
     const s=ser(S.si),n=S.lit.filter(Boolean).length;
-    if(n>=s.need){if(S.si==='prac')P.pracN=(P.pracN||0)+1;if(S.si==='geo')P.geoN=(P.geoN||0)+1;P.done[S.si]=true;s.items.forEach(t=>{if(!P.items.includes(t))P.items.push(t);});save();}
+    if(n>=s.need){if(S.si==='prac')P.pracN=(P.pracN||0)+1;if(S.si==='geo')P.geoN=(P.geoN||0)+1;if(S.si==='gr')P.grN=(P.grN||0)+1;P.done[S.si]=true;s.items.forEach(t=>{if(!P.items.includes(t))P.items.push(t);});save();}
     S.screen='res';
   }
   render();
@@ -1312,7 +1522,7 @@ function act(a,d){
   switch(a){
     case 'home':S={screen:'home'};break;
     case 'diag':startDiag();return;
-    case 'ser':S={screen:'intro',si:(d.i==='ineq'||d.i==='prac'||d.i==='geo')?d.i:+d.i};break;
+    case 'ser':S={screen:'intro',si:(d.i==='ineq'||d.i==='prac'||d.i==='geo'||d.i==='gr')?d.i:+d.i};break;
     case 'hint':S.hint=(S.hint||0)+1;break;
     case 'goon':S.interlude=false;break;
     case 'dk':if(S.screen==='diag'){recordDiag(false,'',true);return;}break;
